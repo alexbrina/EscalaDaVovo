@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="PRAGMA" content="NO-CACHE" />
+<meta http-equiv="EXPIRES" content="-1" />
+<meta charset=utf-8 />
+<script>
+Model = function() {
+
+    var mensagens = '';
+    var referencia = {acompanhante: 'Alexandre', data: '2014/01/25'};
+    var agendas, cenario, dia, fim, acompanhante;
+
+    var hoje = function() {
+        var hoje = new Date();
+        return new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    };
+
+    var eDiaDeAcompanhar = function() {
+        return cenario.diasDaSemana.indexOf(dia.getDay() + 1) > -1;
+    };
+
+    var proximoAcompanhante = function() {
+        acompanhante++;
+        if (acompanhante == cenario.acompanhantes.length) acompanhante = 0;
+    };
+
+    var apresentarAcompanhante = function() {
+        return cenario.acompanhantes[acompanhante];
+    };
+
+    var apresentarData = function() {
+        var result = '';
+        var diaDaSemana = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+        result += diaDaSemana[dia.getDay()];
+        result += " " + ("0" + dia.getDate()).slice(-2);
+        result += "/" + ("0" + (dia.getMonth() + 1)).slice(-2);
+        result += "/" + dia.getFullYear();
+        return result;
+    };
+
+    var incluirAgenda = function() {
+        agendas.push({
+            acompanhante: apresentarAcompanhante(),
+            data: apresentarData()
+        });
+    };
+
+    var proximoDia = function() {
+        dia.setDate(dia.getDate() + 1);
+    };
+
+    var inicializarAcompanhante = function() {
+        acompanhante = cenario.acompanhantes.indexOf(referencia.acompanhante);
+        dia = new Date(referencia.data);
+        fim = hoje();
+        do {
+            if (eDiaDeAcompanhar()) {
+                proximoAcompanhante();
+            }
+            proximoDia();
+        } while (dia < fim);
+    };
+
+    var inicializarDia = function() {
+        dia = hoje();
+        fim = hoje().setFullYear(dia.getFullYear() + 1);
+    };
+
+    var inicializar = function(arg) {
+        cenario = arg;
+        agendas = [];
+        inicializarAcompanhante();
+        inicializarDia();
+    };
+    
+    var invalido = function() {
+        return (mensagens.length > 0);
+    };
+
+    var validar = function(cenario) {
+        if (hoje() < new Date(referencia.data)) mensagens += 'A data do seu computador está desatualizada, acerte a data para visualizar a escala.'+"\n\n";
+        if (cenario.acompanhantes.indexOf(referencia.acompanhante) < 0) mensagens += 'O acompanhante '+referencia.acompanhante+' é referência para o cálculo da escala e não pode ser retirado, inclua este acompanhante no cenário para visualizar a escala.'+"\n\n";
+        return (invalido()) ? -1 : 0;
+    };
+    
+    var gerarAgendas = function(cenario) {
+        if (validar(cenario) < 0) return;
+        inicializar(cenario);
+        do {
+            if (eDiaDeAcompanhar()) {
+                incluirAgenda();
+                proximoAcompanhante();
+            }
+            proximoDia();
+        } while (dia < fim);
+    };
+
+    return {
+
+        gerarAgendas: gerarAgendas,
+
+        agendas: function() {
+            return agendas;
+        },
+        
+        invalido: invalido,
+        
+        mensagens: function() {
+            return mensagens;
+        }
+
+    };
+};
+
+TableView = function() {
+
+    var model;
+
+    var gerarHtml = function(agendas) {
+        var result = '';
+        result += '<table style="font-family:helvetica;font-size:10pt" border="1" cellspacing="0" cellpadding="5">';
+        for (var i=0; i<agendas.length; i++) {
+            result += '<tr><td>' + agendas[i].acompanhante + '</td><td>' + agendas[i].data + '</td></tr>';
+        }
+        result += '</table>';
+        return result;
+    };
+
+    var apresentar = function(args) {
+        model = args;
+        if (model.invalido()) {
+            alert(model.mensagens());
+            return;
+        };
+        var agendas = model.agendas();
+        var result = gerarHtml(agendas);
+        document.write(result);
+    };
+
+    return {
+
+        apresentar: apresentar
+
+    };
+
+};
+
+Controller = function(cenario) {
+    var model = new Model();
+    var view = new TableView();
+    model.gerarAgendas(cenario);
+    view.apresentar(model);
+};
+
+AjustesParaNavegadorAntigo = function() {
+    if (!Array.prototype.indexOf) {
+        Array.prototype.indexOf = function(obj, start) {
+             for (var i = (start || 0), j = this.length; i < j; i++) {
+                 if (this[i] === obj) { return i; }
+             }
+             return -1;
+        }
+    }
+
+    if (!Array.prototype.push) {
+        Array.prototype.push = function(arg) {
+             this[this.length] = arg;
+             return this.length;
+        }
+    }
+};
+
+/*
+CENARIO DE ACOMPANHANTES
+-------------------------
+A ordem dos acompanhantes define a sequencia da escala
+*/
+
+AjustesParaNavegadorAntigo();
+
+new Controller({
+    diasDaSemana: [7,1], // Sábado e Domingo
+    acompanhantes: ['Cairo','Alexandre','Roberta','Marcella','Raíssa','Mariana','Diogo']
+});
+
+</script>
+<title>Escala Da Vovó</title>
+</head>
+<body>
+</body>
+</html>
