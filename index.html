@@ -132,7 +132,7 @@ TableView = function() {
         if (model.invalido()) {
             alert(model.mensagens());
             return;
-        };
+        }
         var agendas = model.agendas();
         var result = gerarHtml(agendas);
         document.write(result);
@@ -160,14 +160,14 @@ AjustesParaNavegadorAntigo = function() {
                  if (this[i] === obj) { return i; }
              }
              return -1;
-        }
+        };
     }
 
     if (!Array.prototype.push) {
         Array.prototype.push = function(arg) {
              this[this.length] = arg;
              return this.length;
-        }
+        };
     }
 };
 
