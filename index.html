@@ -113,11 +113,28 @@ Model = function() {
     };
 };
 
-TableView = function() {
+AbstractView = function() {
 
-    var model;
+    var self = {};
+    
+    self.apresentar = function(model) {
+        if (model.invalido()) {
+            alert(model.mensagens());
+            return;
+        }
+        var agendas = model.agendas();
+        var result = self.gerarHtml(agendas);
+        document.write(result);
+    };
 
-    var gerarHtml = function(agendas) {
+    return self;
+};
+
+SingleTableView = function() {
+
+    var self = AbstractView();
+    
+    self.gerarHtml = function(agendas) {
         var result = '';
         result += '<table style="font-family:helvetica;font-size:10pt" border="1" cellspacing="0" cellpadding="5">';
         for (var i=0; i<agendas.length; i++) {
@@ -127,28 +144,16 @@ TableView = function() {
         return result;
     };
 
-    var apresentar = function(args) {
-        model = args;
-        if (model.invalido()) {
-            alert(model.mensagens());
-            return;
-        }
-        var agendas = model.agendas();
-        var result = gerarHtml(agendas);
-        document.write(result);
-    };
-
     return {
 
-        apresentar: apresentar
+        apresentar: self.apresentar
 
     };
-
 };
 
 Controller = function(cenario) {
     var model = new Model();
-    var view = new TableView();
+    var view = new SingleTableView();
     model.gerarAgendas(cenario);
     view.apresentar(model);
 };
