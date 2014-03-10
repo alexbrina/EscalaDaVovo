@@ -29,10 +29,15 @@ Model = function() {
         return cenario.acompanhantes[acompanhante];
     };
 
-    var apresentarData = function() {
+    var apresentarDiaDaSemana = function() {
         var result = '';
         var diaDaSemana = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
         result += diaDaSemana[dia.getDay()];
+        return result;
+    };
+
+    var apresentarData = function() {
+        var result = '';
         result += " " + ("0" + dia.getDate()).slice(-2);
         result += "/" + ("0" + (dia.getMonth() + 1)).slice(-2);
         result += "/" + dia.getFullYear();
@@ -42,12 +47,18 @@ Model = function() {
     var incluirAgenda = function() {
         agendas.push({
             acompanhante: apresentarAcompanhante(),
-            data: apresentarData()
+            diaDaSemana: apresentarDiaDaSemana(),
+            data: apresentarData(),
+            dia: dia.getDay()
         });
     };
 
     var proximoDia = function() {
-        dia.setDate(dia.getDate() + 1);
+    	var confere = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate());
+    	dia.setDate(dia.getDate() + 1);
+        if (confere.getDate() === dia.getDate()) {
+        	dia.setHours(dia.getHours() + 2);
+        }
     };
 
     var inicializarAcompanhante = function() {
@@ -113,42 +124,85 @@ Model = function() {
     };
 };
 
-TableView = function() {
+AbstractView = function() {
 
-    var model;
+    var self = {};
+    
+    self.apresentar = function(model) {
+        if (model.invalido()) {
+            alert(model.mensagens());
+            return;
+        }
+        var agendas = model.agendas();
+        var result = self.gerarHtml(agendas);
+        document.write(result);
+    };
 
-    var gerarHtml = function(agendas) {
+    return self;
+};
+
+SingleTableView = function() {
+
+    var self = AbstractView();
+    
+    self.gerarHtml = function(agendas) {
         var result = '';
         result += '<table style="font-family:helvetica;font-size:10pt" border="1" cellspacing="0" cellpadding="5">';
         for (var i=0; i<agendas.length; i++) {
-            result += '<tr><td>' + agendas[i].acompanhante + '</td><td>' + agendas[i].data + '</td></tr>';
+            result += '<tr><td>' 
+            + agendas[i].acompanhante + '</td><td>' 
+            + agendas[i].diaDaSemana + '</td><td>' 
+            + agendas[i].data 
+            + '</td></tr>';
         }
         result += '</table>';
         return result;
     };
 
-    var apresentar = function(args) {
-        model = args;
-        if (model.invalido()) {
-            alert(model.mensagens());
-            return;
-        };
-        var agendas = model.agendas();
-        var result = gerarHtml(agendas);
-        document.write(result);
+    return {
+
+        apresentar: self.apresentar
+
     };
+};
+
+SplitView = function() {
+
+    var self = AbstractView();
+    
+    self.gerarHtml = function(agendas) {
+    	var fdsFlag = true;
+        var result = '';
+        result += self.gerarCss();
+        result += '<table style="font-family:helvetica;font-size:10pt" cellspacing="0" cellpadding="5">';
+        for (var i=0; i<agendas.length; i++) {
+            result += '<tr class="fds-'+(fdsFlag?'odd':'even')+'"><td>' 
+            + agendas[i].acompanhante + '</td><td>' 
+            + agendas[i].diaDaSemana + '</td><td>' 
+            + agendas[i].data 
+            + '</td></tr>';
+            if (agendas[i].dia === 0) fdsFlag = !fdsFlag;
+        }
+        result += '</table>';
+        return result;
+    };
+    
+    self.gerarCss = function() {
+    	return "<style>"
+    	+ ".fds-odd {background:#EEE;}"
+    	+ "</style>" ;
+    }
 
     return {
 
-        apresentar: apresentar
+        apresentar: self.apresentar
 
     };
-
 };
 
 Controller = function(cenario) {
     var model = new Model();
-    var view = new TableView();
+    var view = new SplitView();
     model.gerarAgendas(cenario);
     view.apresentar(model);
 };
@@ -160,14 +214,14 @@ AjustesParaNavegadorAntigo = function() {
                  if (this[i] === obj) { return i; }
              }
              return -1;
-        }
+        };
     }
 
     if (!Array.prototype.push) {
         Array.prototype.push = function(arg) {
              this[this.length] = arg;
              return this.length;
-        }
+        };
     }
 };
 
