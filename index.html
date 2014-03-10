@@ -29,10 +29,15 @@ Model = function() {
         return cenario.acompanhantes[acompanhante];
     };
 
-    var apresentarData = function() {
+    var apresentarDiaDaSemana = function() {
         var result = '';
         var diaDaSemana = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
         result += diaDaSemana[dia.getDay()];
+        return result;
+    };
+
+    var apresentarData = function() {
+        var result = '';
         result += " " + ("0" + dia.getDate()).slice(-2);
         result += "/" + ("0" + (dia.getMonth() + 1)).slice(-2);
         result += "/" + dia.getFullYear();
@@ -42,12 +47,14 @@ Model = function() {
     var incluirAgenda = function() {
         agendas.push({
             acompanhante: apresentarAcompanhante(),
-            data: apresentarData()
+            diaDaSemana: apresentarDiaDaSemana(),
+            data: apresentarData(),
+            dia: dia.getDay()
         });
     };
 
     var proximoDia = function() {
-        dia.setDate(dia.getDate() + 1);
+    	dia.setDate(dia.getDate() + 1);
     };
 
     var inicializarAcompanhante = function() {
@@ -138,7 +145,11 @@ SingleTableView = function() {
         var result = '';
         result += '<table style="font-family:helvetica;font-size:10pt" border="1" cellspacing="0" cellpadding="5">';
         for (var i=0; i<agendas.length; i++) {
-            result += '<tr><td>' + agendas[i].acompanhante + '</td><td>' + agendas[i].data + '</td></tr>';
+            result += '<tr><td>' 
+            + agendas[i].acompanhante + '</td><td>' 
+            + agendas[i].diaDaSemana + '</td><td>' 
+            + agendas[i].data 
+            + '</td></tr>';
         }
         result += '</table>';
         return result;
@@ -151,9 +162,43 @@ SingleTableView = function() {
     };
 };
 
+SplitView = function() {
+
+    var self = AbstractView();
+    
+    self.gerarHtml = function(agendas) {
+    	var fdsFlag = true;
+        var result = '';
+        result += self.gerarCss();
+        result += '<table style="font-family:helvetica;font-size:10pt" cellspacing="0" cellpadding="5">';
+        for (var i=0; i<agendas.length; i++) {
+            result += '<tr class="fds-'+(fdsFlag?'odd':'even')+'"><td>' 
+            + agendas[i].acompanhante + '</td><td>' 
+            + agendas[i].diaDaSemana + '</td><td>' 
+            + agendas[i].data 
+            + '</td></tr>';
+            if (agendas[i].dia === 0) fdsFlag = !fdsFlag;
+        }
+        result += '</table>';
+        return result;
+    };
+    
+    self.gerarCss = function() {
+    	return "<style>"
+    	+ ".fds-odd {background:#EEE;}"
+    	+ "</style>" ;
+    }
+
+    return {
+
+        apresentar: self.apresentar
+
+    };
+};
+
 Controller = function(cenario) {
     var model = new Model();
-    var view = new SingleTableView();
+    var view = new SplitView();
     model.gerarAgendas(cenario);
     view.apresentar(model);
 };
