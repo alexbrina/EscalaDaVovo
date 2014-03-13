@@ -126,26 +126,26 @@ Model = function() {
 
 AbstractView = function() {
 
-    var self = {};
+    var that = {};
     
-    self.apresentar = function(model) {
+    that.apresentar = function(model) {
         if (model.invalido()) {
             alert(model.mensagens());
             return;
         }
         var agendas = model.agendas();
-        var result = self.gerarHtml(agendas);
+        var result = that.gerarHtml(agendas);
         document.write(result);
     };
 
-    return self;
+    return that;
 };
 
 SingleTableView = function() {
 
-    var self = AbstractView();
+    var that = AbstractView();
     
-    self.gerarHtml = function(agendas) {
+    that.gerarHtml = function(agendas) {
         var result = '';
         result += '<table style="font-family:helvetica;font-size:10pt" border="1" cellspacing="0" cellpadding="5">';
         for (var i=0; i<agendas.length; i++) {
@@ -161,19 +161,19 @@ SingleTableView = function() {
 
     return {
 
-        apresentar: self.apresentar
+        apresentar: that.apresentar
 
     };
 };
 
 SplitView = function() {
 
-    var self = AbstractView();
+    var that = AbstractView();
     
-    self.gerarHtml = function(agendas) {
+    that.gerarHtml = function(agendas) {
     	var fdsFlag = true;
         var result = '';
-        result += self.gerarCss();
+        result += that.gerarCss();
         result += '<table style="font-family:helvetica;font-size:10pt" cellspacing="0" cellpadding="5">';
         for (var i=0; i<agendas.length; i++) {
             result += '<tr class="fds-'+(fdsFlag?'odd':'even')+'"><td>' 
@@ -187,15 +187,15 @@ SplitView = function() {
         return result;
     };
     
-    self.gerarCss = function() {
+    that.gerarCss = function() {
     	return "<style>"
-    	+ ".fds-odd {background:#EEE;}"
+    	+ ".fds-odd {background:#9CF;}"
     	+ "</style>" ;
     }
 
     return {
 
-        apresentar: self.apresentar
+        apresentar: that.apresentar
 
     };
 };
