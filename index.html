@@ -92,11 +92,11 @@ Model = function() {
     var validar = function(cenario) {
         if (hoje() < new Date(referencia.data)) mensagens += 'A data do seu computador está desatualizada, acerte a data para visualizar a escala.'+"\n\n";
         if (cenario.acompanhantes.indexOf(referencia.acompanhante) < 0) mensagens += 'O acompanhante '+referencia.acompanhante+' é referência para o cálculo da escala e não pode ser retirado, inclua este acompanhante no cenário para visualizar a escala.'+"\n\n";
-        return (invalido()) ? -1 : 0;
     };
     
     var gerarAgendas = function(cenario) {
-        if (validar(cenario) < 0) return;
+        validar(cenario);
+        if (invalido()) return;
         inicializar(cenario);
         do {
             if (eDiaDeAcompanhar()) {
