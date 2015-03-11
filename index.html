@@ -7,9 +7,7 @@
 <script>
 Model = function() {
 
-    var mensagens = '';
-    var referencia = {acompanhante: 'Alexandre', data: '2014/01/25'};
-    var agendas, cenario, dia, fim, acompanhante;
+    var mensagens = '', agendas, cenario, dia, fim, acompanhante;
 
     var hoje = function() {
         var hoje = new Date();
@@ -62,8 +60,8 @@ Model = function() {
     };
 
     var inicializarAcompanhante = function() {
-        acompanhante = cenario.acompanhantes.indexOf(referencia.acompanhante);
-        dia = new Date(referencia.data);
+        acompanhante = cenario.acompanhantes.indexOf(cenario.referencia.acompanhante);
+        dia = new Date(cenario.referencia.data);
         fim = hoje();
         do {
             if (eDiaDeAcompanhar()) {
@@ -90,8 +88,8 @@ Model = function() {
     };
 
     var validar = function(cenario) {
-        if (hoje() < new Date(referencia.data)) mensagens += 'A data do seu computador está desatualizada, acerte a data para visualizar a escala.'+"\n\n";
-        if (cenario.acompanhantes.indexOf(referencia.acompanhante) < 0) mensagens += 'O acompanhante '+referencia.acompanhante+' é referência para o cálculo da escala e não pode ser retirado, inclua este acompanhante no cenário para visualizar a escala.'+"\n\n";
+        if (hoje() < new Date(cenario.referencia.data)) mensagens += 'A data do seu computador está desatualizada, acerte a data para visualizar a escala.'+"\n\n";
+        if (cenario.acompanhantes.indexOf(cenario.referencia.acompanhante) < 0) mensagens += 'O acompanhante '+cenario.referencia.acompanhante+' é referência para o cálculo da escala e não pode ser retirado, inclua este acompanhante no cenário para visualizar a escala.'+"\n\n";
     };
     
     var gerarAgendas = function(cenario) {
@@ -236,7 +234,8 @@ AjustesParaNavegadorAntigo();
 
 new Controller({
     diasDaSemana: [7,1], // Sábado e Domingo
-    acompanhantes: ['Cairo','Alexandre','Roberta','Marcella','Raíssa','Mariana','Diogo']
+    acompanhantes: ['Alexandre', 'Roberta', 'Raissa', 'Marcella', 'Mariana', 'Diogo', 'Roberta', 'Alexandre', 'Marcella', 'Raissa', 'Diogo', 'Mariana'],
+    referencia: {acompanhante: 'Alexandre', data: '2015/01/31'}
 });
 
 </script>
