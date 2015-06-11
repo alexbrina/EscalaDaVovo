@@ -7,7 +7,7 @@
 <script>
 Model = function() {
 
-    var mensagens = '', agendas, cenario, dia, fim, acompanhante;
+    var mensagens = '', agendas = [], cenario, escala, dia, fim, acompanhante, primeiraEscala = -1;
 
     var hoje = function() {
         var hoje = new Date();
@@ -18,13 +18,8 @@ Model = function() {
         return cenario.diasDaSemana.indexOf(dia.getDay() + 1) > -1;
     };
 
-    var proximoAcompanhante = function() {
-        acompanhante++;
-        if (acompanhante == cenario.acompanhantes.length) acompanhante = 0;
-    };
-
     var apresentarAcompanhante = function() {
-        return cenario.acompanhantes[acompanhante];
+        return escala.acompanhantes[acompanhante];
     };
 
     var apresentarDiaDaSemana = function() {
@@ -51,6 +46,11 @@ Model = function() {
         });
     };
 
+    var proximoAcompanhante = function() {
+        acompanhante++;
+        if (acompanhante == escala.acompanhantes.length) acompanhante = 0;
+    };
+
     var proximoDia = function() {
     	var confere = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate());
     	dia.setDate(dia.getDate() + 1);
@@ -59,50 +59,64 @@ Model = function() {
         }
     };
 
-    var inicializarAcompanhante = function() {
-        acompanhante = cenario.acompanhantes.indexOf(cenario.referencia.acompanhante);
-        dia = new Date(cenario.referencia.data);
-        fim = hoje();
-        do {
-            if (eDiaDeAcompanhar()) {
-                proximoAcompanhante();
+    var proximaEscala = function() {
+        primeiraEscala = (primeiraEscala == -1);
+        escala = cenario.escalas.shift();
+        return !!escala;
+    };
+
+    var inicializarCenario = function() {
+        var escalas = cenario.escalas;
+        var i = escalas.length, dia = hoje(), atual = -1;
+        if (i > 0) escalas[i - 1].fim = hoje().setMonth(dia.getMonth() + 7);
+        while (i--) {
+            escalas[i].referencia = new Date(escalas[i].referencia);
+            if (i > 0) escalas[i - 1].fim = escalas[i].referencia;
+            if (escalas[i].referencia <= dia) {
+                if (atual == -1) atual = i;
+                if (atual > i) escalas.splice(i, 1);
             }
-            proximoDia();
-        } while (dia < fim);
+        }
     };
 
-    var inicializarDia = function() {
-        dia = hoje();
-        fim = hoje().setFullYear(dia.getFullYear() + 1);
+    var inicializarEscala = function() {
+        acompanhante = 0;
+        dia = escala.referencia;
+        if (primeiraEscala) { // fastforward até a primeira agenda
+            fim = hoje();
+            do {
+                if (eDiaDeAcompanhar()) {
+                    proximoAcompanhante();
+                }
+                proximoDia();
+            } while (dia < fim);
+        }
+        fim = escala.fim;
     };
 
-    var inicializar = function(arg) {
-        cenario = arg;
-        agendas = [];
-        inicializarAcompanhante();
-        inicializarDia();
-    };
-    
     var invalido = function() {
         return (mensagens.length > 0);
     };
 
     var validar = function(cenario) {
-        if (hoje() < new Date(cenario.referencia.data)) mensagens += 'A data do seu computador está desatualizada, acerte a data para visualizar a escala.'+"\n\n";
-        if (cenario.acompanhantes.indexOf(cenario.referencia.acompanhante) < 0) mensagens += 'O acompanhante '+cenario.referencia.acompanhante+' é referência para o cálculo da escala e não pode ser retirado, inclua este acompanhante no cenário para visualizar a escala.'+"\n\n";
+        if (hoje() < new Date(cenario.escalas[0].referencia)) mensagens += 'A data do seu computador está desatualizada, acerte a data para visualizar a escala.'+"\n\n";
     };
     
-    var gerarAgendas = function(cenario) {
+    var gerarAgendas = function(config) {
+        cenario = config;
         validar(cenario);
         if (invalido()) return;
-        inicializar(cenario);
-        do {
-            if (eDiaDeAcompanhar()) {
-                incluirAgenda();
-                proximoAcompanhante();
-            }
-            proximoDia();
-        } while (dia < fim);
+        inicializarCenario();
+        while (proximaEscala()) {
+            inicializarEscala();
+            do {
+                if (eDiaDeAcompanhar()) {
+                    incluirAgenda();
+                    proximoAcompanhante();
+                }
+                proximoDia();
+            } while (dia < fim);
+        }
     };
 
     return {
@@ -172,7 +186,7 @@ SplitView = function() {
     	var fdsFlag = true;
         var result = '';
         result += that.gerarCss();
-        result += '<table style="font-family:helvetica;font-size:28pt" cellspacing="0" cellpadding="5">';
+        result += '<table style="font-family:helvetica;font-size:30pt" cellspacing="0" cellpadding="5">';
         for (var i=0; i<agendas.length; i++) {
             result += '<tr class="fds-'+(fdsFlag?'odd':'even')+'"><td>' 
             + agendas[i].acompanhante + '</td><td>' 
@@ -227,15 +241,21 @@ AjustesParaNavegadorAntigo = function() {
 /*
 CENARIO DE ACOMPANHANTES
 -------------------------
-A ordem dos acompanhantes define a sequencia da escala
+As escalas devem estar ordenadas cronologicamente conforme a referencia
+A ordem dos acompanhantes define a sequencia da escala partindo da referencia
 */
 
 AjustesParaNavegadorAntigo();
 
 new Controller({
     diasDaSemana: [7,1], // Sábado e Domingo
-    acompanhantes: ['Roberta', 'Alexandre', 'Marcella', 'Diogo', 'Mariana'],
-    referencia: {acompanhante: 'Roberta', data: '2015/01/31'}
+    escalas: [{
+        referencia: '2015/05/31',
+        acompanhantes: ['Roberta', 'Alexandre', 'Marcella', 'Diogo', 'Mariana']
+    },{
+        referencia: '2015/06/27',
+        acompanhantes: ['Cairo', 'Marcella', 'Diogo', 'Mariana', 'Roberta', 'Alexandre', 'Marcella', 'Cairo', 'Mariana', 'Diogo', 'Alexandre', 'Roberta']
+    }]
 });
 
 </script>
