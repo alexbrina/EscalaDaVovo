@@ -7,130 +7,129 @@
 <script>
 Model = function() {
 
-    var mensagens = '', agendas = [], cenario, escala, dia, fim, acompanhante, primeiraEscala = -1;
+    var agendas = [];
+
+    var apresentarAcompanhante = function(escala) {
+        return escala.acompanhantes[escala.acompanhante];
+    };
+
+    var apresentarDiaDaSemana = function(dia) {
+        var res = '';
+        var diaDaSemana = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+        res += diaDaSemana[dia.getDay()];
+        return res;
+    };
+
+    var apresentarData = function(dia) {
+        var res = '';
+        res += " " + ("0" + dia.getDate()).slice(-2);
+        res += "/" + ("0" + (dia.getMonth() + 1)).slice(-2);
+        res += "/" + dia.getFullYear();
+        return res;
+    };
 
     var hoje = function() {
         var hoje = new Date();
         return new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
     };
 
-    var eDiaDeAcompanhar = function() {
-        return cenario.diasDaSemana.indexOf(dia.getDay() + 1) > -1;
+    var inicializarEscalas = function(escalas) {
+        var res = {turnos:[]};
+        
+        var i = escalas.length;
+        while (i--) {
+            escalas[i].id = i;
+            escalas[i].acompanhante = 0;
+            escalas[i].inicio = new Date(escalas[i].inicio);
+            if (res.turnos.indexOf(escalas[i].turno) < 0) res.turnos.push(escalas[i].turno);
+            var j = escalas[i].diasDaSemana.length;
+            escalas[i].folgar = [];
+            while (j--) {
+                escalas[i].folgar[j] = 0;
+            }
+        }
+        
+        return res;
     };
 
-    var apresentarAcompanhante = function() {
-        return escala.acompanhantes[acompanhante];
+    var eDiaDeAcompanhar = function(escala, dia) {
+        return escala.diasDaSemana.indexOf(dia.getDay() + 1) > -1;
     };
 
-    var apresentarDiaDaSemana = function() {
-        var result = '';
-        var diaDaSemana = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-        result += diaDaSemana[dia.getDay()];
-        return result;
+    var determinaEscalaDoDia = function(escalas, dia, turno) {
+        var i = 0, elegiveis = [], eleita = -1;
+        
+        i = escalas.length;
+        while (i--) {
+            if (escalas[i].turno == turno 
+            && escalas[i].inicio <= dia
+            && eDiaDeAcompanhar(escalas[i], dia)) elegiveis.push(i);
+        }
+
+        i = elegiveis.length;
+        while (i--) {
+            if (escalas[elegiveis[i]].folgar[dia.getDay()] > 0) {
+                escalas[elegiveis[i]].folgar[dia.getDay()]--;
+                continue;
+            }
+            
+            if (eleita == -1 || escalas[elegiveis[i]].prioridade < escalas[eleita].prioridade) eleita = elegiveis[i];
+
+            if (escalas[eleita].alternancia > 0) {
+                escalas[eleita].folgar[dia.getDay()] = escalas[eleita].alternancia;
+            }
+        }
+        
+        return eleita;
     };
 
-    var apresentarData = function() {
-        var result = '';
-        result += " " + ("0" + dia.getDate()).slice(-2);
-        result += "/" + ("0" + (dia.getMonth() + 1)).slice(-2);
-        result += "/" + dia.getFullYear();
-        return result;
+    var proximoAcompanhante = function(escala) {
+        escala.acompanhante++;
+        if (escala.acompanhante == escala.acompanhantes.length) escala.acompanhante = 0;
     };
 
-    var incluirAgenda = function() {
+    var incluirAgenda = function(escala, dia) {
         agendas.push({
-            acompanhante: apresentarAcompanhante(),
-            diaDaSemana: apresentarDiaDaSemana(),
-            data: apresentarData(),
-            dia: dia.getDay()
+            acompanhante: apresentarAcompanhante(escala),
+            diaDaSemana: apresentarDiaDaSemana(dia),
+            data: apresentarData(dia),
+            dia: dia.getDay(),
+            escala: escala
         });
     };
 
-    var proximoAcompanhante = function() {
-        acompanhante++;
-        if (acompanhante == escala.acompanhantes.length) acompanhante = 0;
-    };
-
-    var proximoDia = function() {
-    	var confere = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate());
-    	dia.setDate(dia.getDate() + 1);
+    var proximoDia = function(dia) {
+        var confere = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate());
+        dia.setDate(dia.getDate() + 1);
         if (confere.getDate() === dia.getDate()) {
-        	dia.setHours(dia.getHours() + 2);
+            dia.setHours(dia.getHours() + 2);
         }
     };
 
-    var proximaEscala = function() {
-        primeiraEscala = (primeiraEscala == -1);
-        escala = cenario.escalas.shift();
-        return !!escala;
-    };
-
-    var inicializarCenario = function() {
-        var escalas = cenario.escalas;
-        var i = escalas.length, dia = hoje(), atual = -1;
-        if (i > 0) escalas[i - 1].fim = hoje().setMonth(dia.getMonth() + 7);
-        while (i--) {
-            escalas[i].referencia = new Date(escalas[i].referencia);
-            if (i > 0) escalas[i - 1].fim = escalas[i].referencia;
-            if (escalas[i].referencia <= dia) {
-                if (atual == -1) atual = i;
-                if (atual > i) escalas.splice(i, 1);
+    var processar = function(escalas) {
+        var dia = hoje();
+        var fim = hoje().setMonth(dia.getMonth() + 7);
+        var meta = inicializarEscalas(escalas);
+        while (dia < fim) {
+            var j = meta.turnos.length;
+            while (j--) {
+                var turno = meta.turnos[j];
+                var i = determinaEscalaDoDia(escalas, dia, turno);
+                if (i > -1) {
+                    incluirAgenda(escalas[i], dia);
+                    proximoAcompanhante(escalas[i]);
+                }
             }
-        }
-    };
-
-    var inicializarEscala = function() {
-        acompanhante = 0;
-        dia = escala.referencia;
-        if (primeiraEscala) { // fastforward até a primeira agenda
-            fim = hoje();
-            do {
-                if (eDiaDeAcompanhar()) {
-                    proximoAcompanhante();
-                }
-                proximoDia();
-            } while (dia < fim);
-        }
-        fim = escala.fim;
-    };
-
-    var invalido = function() {
-        return (mensagens.length > 0);
-    };
-
-    var validar = function(cenario) {
-        if (hoje() < new Date(cenario.escalas[0].referencia)) mensagens += 'A data do seu computador está desatualizada, acerte a data para visualizar a escala.'+"\n\n";
-    };
-    
-    var gerarAgendas = function(config) {
-        cenario = config;
-        validar(cenario);
-        if (invalido()) return;
-        inicializarCenario();
-        while (proximaEscala()) {
-            inicializarEscala();
-            do {
-                if (eDiaDeAcompanhar()) {
-                    incluirAgenda();
-                    proximoAcompanhante();
-                }
-                proximoDia();
-            } while (dia < fim);
-        }
+            proximoDia(dia);
+        };
     };
 
     return {
 
-        gerarAgendas: gerarAgendas,
+        processar: processar,
 
         agendas: function() {
             return agendas;
-        },
-        
-        invalido: invalido,
-        
-        mensagens: function() {
-            return mensagens;
         }
 
     };
@@ -141,41 +140,12 @@ AbstractView = function() {
     var that = {};
     
     that.apresentar = function(model) {
-        if (model.invalido()) {
-            alert(model.mensagens());
-            return;
-        }
         var agendas = model.agendas();
-        var result = that.gerarHtml(agendas);
-        document.write(result);
+        var res = that.gerarHtml(agendas);
+        document.write(res);
     };
 
     return that;
-};
-
-SingleTableView = function() {
-
-    var that = AbstractView();
-    
-    that.gerarHtml = function(agendas) {
-        var result = '';
-        result += '<table style="font-family:helvetica;font-size:10pt" border="1" cellspacing="0" cellpadding="5">';
-        for (var i=0; i<agendas.length; i++) {
-            result += '<tr><td>' 
-            + agendas[i].acompanhante + '</td><td>' 
-            + agendas[i].diaDaSemana + '</td><td>' 
-            + agendas[i].data 
-            + '</td></tr>';
-        }
-        result += '</table>';
-        return result;
-    };
-
-    return {
-
-        apresentar: that.apresentar
-
-    };
 };
 
 SplitView = function() {
@@ -183,29 +153,22 @@ SplitView = function() {
     var that = AbstractView();
     
     that.gerarHtml = function(agendas) {
-    	var fdsFlag = true;
-        var result = '';
-        result += that.gerarCss();
-        result += '<table style="font-family:helvetica;font-size:30pt" cellspacing="0" cellpadding="5">';
+        var fdsFlag = true;
+        var res = '';
+        res += '<table style="font-family:helvetica;font-size:30pt" cellspacing="0" cellpadding="5">';
         for (var i=0; i<agendas.length; i++) {
-            result += '<tr class="fds-'+(fdsFlag?'odd':'even')+'"><td>' 
+            res += '<tr style="background:'+agendas[i].escala.cor+';"><td>' 
             + agendas[i].acompanhante + '</td><td>' 
             + agendas[i].diaDaSemana + '</td><td>' 
+            + agendas[i].escala.turno + '</td><td>' 
             + agendas[i].data 
             + '</td></tr>';
             if (agendas[i].dia === 0) fdsFlag = !fdsFlag;
         }
-        result += '</table>';
-        return result;
+        res += '</table>';
+        return res;
     };
     
-    that.gerarCss = function() {
-    	return "<style>"
-        + ".fds-odd {background:#6CF;}"
-        + ".fds-even {background:#FF6;}"
-    	+ "</style>" ;
-    }
-
     return {
 
         apresentar: that.apresentar
@@ -213,10 +176,10 @@ SplitView = function() {
     };
 };
 
-Controller = function(cenario) {
+Controller = function(escalas) {
     var model = new Model();
+    model.processar(escalas);
     var view = new SplitView();
-    model.gerarAgendas(cenario);
     view.apresentar(model);
 };
 
@@ -241,22 +204,52 @@ AjustesParaNavegadorAntigo = function() {
 /*
 CENARIO DE ACOMPANHANTES
 -------------------------
-As escalas devem estar ordenadas cronologicamente conforme a referencia
-A ordem dos acompanhantes define a sequencia da escala partindo da referencia
+A ordem dos acompanhantes define a sequencia da escala partindo do inicio
 */
 
 AjustesParaNavegadorAntigo();
 
-new Controller({
-    diasDaSemana: [7,1], // Sábado e Domingo
-    escalas: [{
-        referencia: '2015/05/31',
-        acompanhantes: ['Roberta', 'Alexandre', 'Marcella', 'Diogo', 'Mariana']
+new Controller([{
+        diasDaSemana: [2,3,4,5], // segunda a quinta
+        turno: 'Noite',
+        alternancia: 0, // não alterna
+        prioridade: 0, // prioridade relativa p/ solucionar coincidencia de 2+ escalas, menor valor é prioritario
+        acompanhantes: ['Ricardo', 'Nilza', 'Mariana', 'Márcio'],
+        inicio: '2015/12/07',
+        cor: '#FF3FFF'
     },{
-        referencia: '2015/06/27',
-        acompanhantes: ['Cairo', 'Marcella', 'Mariana', 'Diogo', 'Alexandre', 'Roberta', 'Marcella', 'Cairo', 'Diogo', 'Mariana', 'Roberta', 'Alexandre']
-    }]
-});
+        diasDaSemana: [6,7,1], // Sexta, Sábado e Domingo
+        turno: 'Noite',
+        alternancia: 0,
+        prioridade: 1, 
+        acompanhantes: ['Alexandre', 'Cairo', 'Marcella', 'Diogo', 'Roberta'],
+        inicio: '2015/12/06',
+        cor: '#FF3F3F'
+    },{
+        diasDaSemana: [7],
+        turno: 'Dia',
+        alternancia: 0,
+        prioridade: 1,
+        acompanhantes: ['Ricardo', 'Nilza', 'Mariana', 'Márcio', 'Angela', 'Alexandre', 'Cairo', 'Marcella', 'Diogo', 'Roberta'],
+        inicio: '2015/12/12',
+        cor: '#FFFF3F'
+    },{
+        diasDaSemana: [7],
+        turno: 'Dia',
+        alternancia: 1,
+        prioridade: 0,
+        acompanhantes: ['Marcelo'],
+        inicio: '2015/12/12',
+        cor: '#3FFF3F'
+    },{
+        diasDaSemana: [6,7],
+        turno: 'Noite',
+        alternancia: 1,
+        prioridade: 0,
+        acompanhantes: ['Marcelo'],
+        inicio: '2015/12/11',
+        cor: '#3FFF3F'
+    }]);
 
 </script>
 <script>
