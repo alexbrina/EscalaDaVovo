@@ -47,9 +47,19 @@ Model = function() {
             while (j--) {
                 escalas[i].folgar[j] = 0;
             }
+            inicializarAcompanhante(escalas[i]);
         }
         
         return res;
+    };
+
+    var inicializarAcompanhante = function(escala) {
+        var dia = escala.inicio;
+        var fim = hoje();
+        while (dia < fim) {
+            proximoAcompanhante(escala);
+            proximoDia(dia);
+        };
     };
 
     var eDiaDeAcompanhar = function(escala, dia) {
@@ -88,6 +98,14 @@ Model = function() {
         if (escala.acompanhante == escala.acompanhantes.length) escala.acompanhante = 0;
     };
 
+    var proximoDia = function(dia) {
+        var confere = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate());
+        dia.setDate(dia.getDate() + 1);
+        if (confere.getDate() === dia.getDate()) {
+            dia.setHours(dia.getHours() + 2);
+        }
+    };
+
     var incluirAgenda = function(escala, dia) {
         agendas.push({
             acompanhante: apresentarAcompanhante(escala),
@@ -96,14 +114,6 @@ Model = function() {
             dia: dia.getDay(),
             escala: escala
         });
-    };
-
-    var proximoDia = function(dia) {
-        var confere = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate());
-        dia.setDate(dia.getDate() + 1);
-        if (confere.getDate() === dia.getDate()) {
-            dia.setHours(dia.getHours() + 2);
-        }
     };
 
     var processar = function(escalas) {
