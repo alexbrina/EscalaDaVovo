@@ -57,7 +57,7 @@ Model = function() {
         var dia = escala.inicio;
         var fim = hoje();
         while (dia < fim) {
-            proximoAcompanhante(escala);
+            if (eDiaDeAcompanhar(escala, dia)) proximoAcompanhante(escala);
             proximoDia(dia);
         };
     };
@@ -119,11 +119,11 @@ Model = function() {
     var processar = function(escalas) {
         var dia = hoje();
         var fim = hoje().setMonth(dia.getMonth() + 7);
-        var meta = inicializarEscalas(escalas);
+        var metadata = inicializarEscalas(escalas);
         while (dia < fim) {
-            var j = meta.turnos.length;
+            var j = metadata.turnos.length;
             while (j--) {
-                var turno = meta.turnos[j];
+                var turno = metadata.turnos[j];
                 var i = determinaEscalaDoDia(escalas, dia, turno);
                 if (i > -1) {
                     incluirAgenda(escalas[i], dia);
@@ -163,7 +163,6 @@ SplitView = function() {
     var that = AbstractView();
     
     that.gerarHtml = function(agendas) {
-        var fdsFlag = true;
         var res = '';
         res += '<table style="font-family:helvetica;font-size:30pt" cellspacing="0" cellpadding="5">';
         for (var i=0; i<agendas.length; i++) {
@@ -173,7 +172,6 @@ SplitView = function() {
             + agendas[i].escala.turno + '</td><td>' 
             + agendas[i].data 
             + '</td></tr>';
-            if (agendas[i].dia === 0) fdsFlag = !fdsFlag;
         }
         res += '</table>';
         return res;
@@ -226,7 +224,7 @@ new Controller([{
         prioridade: 0, // prioridade relativa p/ solucionar coincidencia de 2+ escalas, menor valor é prioritario
         acompanhantes: ['Ricardo', 'Nilza', 'Mariana', 'Márcio'],
         inicio: '2015/12/07',
-        cor: '#FF6FFF'
+        cor: '#FF9FFF'
     },{
         diasDaSemana: [6,7,1], // Sexta, Sábado e Domingo
         turno: 'Noite',
