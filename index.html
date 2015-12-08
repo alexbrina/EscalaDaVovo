@@ -34,32 +34,22 @@ Model = function() {
     };
 
     var inicializarEscalas = function(escalas) {
-        var res = {turnos:[]};
+        var turnos = [], menorData = -1;
         
         var i = escalas.length;
         while (i--) {
-            escalas[i].id = i;
             escalas[i].acompanhante = 0;
             escalas[i].inicio = new Date(escalas[i].inicio);
-            if (res.turnos.indexOf(escalas[i].turno) < 0) res.turnos.push(escalas[i].turno);
+            if (turnos.indexOf(escalas[i].turno) < 0) turnos.push(escalas[i].turno);
+            if (menorData == -1 || escalas[i].inicio < menorData) menorData = escalas[i].inicio;
             var j = escalas[i].diasDaSemana.length;
             escalas[i].folgar = [];
             while (j--) {
                 escalas[i].folgar[j] = 0;
             }
-            inicializarAcompanhante(escalas[i]);
         }
         
-        return res;
-    };
-
-    var inicializarAcompanhante = function(escala) {
-        var dia = escala.inicio;
-        var fim = hoje();
-        while (dia < fim) {
-            if (eDiaDeAcompanhar(escala, dia)) proximoAcompanhante(escala);
-            proximoDia(dia);
-        };
+        return {turnos:turnos, menorData:menorData};
     };
 
     var eDiaDeAcompanhar = function(escala, dia) {
@@ -85,8 +75,8 @@ Model = function() {
             
             if (eleita == -1 || escalas[elegiveis[i]].prioridade < escalas[eleita].prioridade) eleita = elegiveis[i];
 
-            if (escalas[eleita].alternancia > 0) {
-                escalas[eleita].folgar[dia.getDay()] = escalas[eleita].alternancia;
+            if (escalas[eleita].folgas > 0) {
+                escalas[eleita].folgar[dia.getDay()] = escalas[eleita].folgas;
             }
         }
         
@@ -117,16 +107,17 @@ Model = function() {
     };
 
     var processar = function(escalas) {
-        var dia = hoje();
-        var fim = hoje().setMonth(dia.getMonth() + 7);
         var metadata = inicializarEscalas(escalas);
+        var dia = metadata.menorData;
+        var fim = hoje().setMonth(dia.getMonth() + 7);
+        var iniciarEm = hoje();
         while (dia < fim) {
             var j = metadata.turnos.length;
             while (j--) {
                 var turno = metadata.turnos[j];
                 var i = determinaEscalaDoDia(escalas, dia, turno);
                 if (i > -1) {
-                    incluirAgenda(escalas[i], dia);
+                    if (dia >= iniciarEm) incluirAgenda(escalas[i], dia);
                     proximoAcompanhante(escalas[i]);
                 }
             }
@@ -220,7 +211,7 @@ AjustesParaNavegadorAntigo();
 new Controller([{
         diasDaSemana: [2,3,4,5], // segunda a quinta
         turno: 'Noite',
-        alternancia: 0, // não alterna
+        folgas: 0, // não tem folgas
         prioridade: 0, // prioridade relativa p/ solucionar coincidencia de 2+ escalas, menor valor é prioritario
         acompanhantes: ['Ricardo', 'Nilza', 'Mariana', 'Márcio'],
         inicio: '2015/12/07',
@@ -228,7 +219,7 @@ new Controller([{
     },{
         diasDaSemana: [6,7,1], // Sexta, Sábado e Domingo
         turno: 'Noite',
-        alternancia: 0,
+        folgas: 0,
         prioridade: 1, 
         acompanhantes: ['Alexandre', 'Cairo', 'Marcella', 'Diogo', 'Roberta'],
         inicio: '2015/12/06',
@@ -236,7 +227,7 @@ new Controller([{
     },{
         diasDaSemana: [7],
         turno: 'Dia',
-        alternancia: 0,
+        folgas: 0,
         prioridade: 1,
         acompanhantes: ['Ricardo', 'Nilza', 'Mariana', 'Márcio', 'Angela', 'Alexandre', 'Cairo', 'Marcella', 'Diogo', 'Roberta'],
         inicio: '2015/12/12',
@@ -244,7 +235,7 @@ new Controller([{
     },{
         diasDaSemana: [7],
         turno: 'Dia',
-        alternancia: 1,
+        folgas: 1,
         prioridade: 0,
         acompanhantes: ['Marcelo'],
         inicio: '2015/12/19',
@@ -252,7 +243,7 @@ new Controller([{
     },{
         diasDaSemana: [6,7],
         turno: 'Noite',
-        alternancia: 1,
+        folgas: 1,
         prioridade: 0,
         acompanhantes: ['Marcelo'],
         inicio: '2015/12/18',
