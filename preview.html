@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="PRAGMA" content="NO-CACHE" />
+<meta http-equiv="EXPIRES" content="-1" />
+<meta charset=utf-8 />
+<script>
+Model = function() {
+
+    var agendas = [];
+
+    var apresentarAcompanhante = function(escala) {
+        return escala.acompanhantes[escala.acompanhante];
+    };
+
+    var apresentarDiaDaSemana = function(dia) {
+        var res = '';
+        var diaDaSemana = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+        res += diaDaSemana[dia.getDay()];
+        return res;
+    };
+
+    var apresentarTurno = function(turno) {
+        var res = '';
+        var turnos = {N:'Noite', T:'Tarde', M:'Manhã', D:'Dia'};
+        res += turnos[turno];
+        return res;
+    };
+
+    var apresentarData = function(dia) {
+        var res = '';
+        res += " " + ("0" + dia.getDate()).slice(-2);
+        res += "/" + ("0" + (dia.getMonth() + 1)).slice(-2);
+        res += "/" + dia.getFullYear();
+        return res;
+    };
+
+    var hoje = function() {
+        var hoje = new Date();
+        return new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    };
+
+    var inicializarEscalas = function(escalas) {
+        var turnos = [], menorData = -1;
+        
+        var i = escalas.length;
+        while (i--) {
+            escalas[i].acompanhante = 0;
+            escalas[i].inicio = new Date(escalas[i].inicio);
+            if (menorData == -1 || escalas[i].inicio < menorData) menorData = escalas[i].inicio;
+            var j = escalas[i].turnos.length;
+            while (j--) {
+                if (turnos.indexOf(escalas[i].turnos[j]) < 0) turnos.push(escalas[i].turnos[j]);
+            }
+            escalas[i].folgar = [];
+            j = escalas[i].diasDaSemana.length;
+            while (j--) {
+                escalas[i].folgar[j] = 0;
+            }
+        }
+        
+        return {turnos:turnos, menorData:menorData};
+    };
+
+    var procuraDiaDeAcompanhar = function(escala, dia, turno) {
+        var i = 0;
+        while ((i = escala.diasDaSemana.indexOf(dia.getDay() + 1, i)) > -1) {
+            if (escala.turnos[i] == turno) return i;
+            i++;
+        }
+        return -1;
+    };
+
+    var determinaEscalaDoDia = function(escalas, dia, turno) {
+        var i = 0, d = 0, agenda = [], elegiveis = [], eleita = -1;
+        
+        i = escalas.length;
+        while (i--) {
+            if (escalas[i].inicio <= dia) {
+                d = procuraDiaDeAcompanhar(escalas[i], dia, turno);
+                if (d >= 0) {
+                    elegiveis.push(i);
+                    agenda.push(d);
+                }
+            }
+        }
+
+        i = elegiveis.length;
+        while (i--) {
+            if (escalas[elegiveis[i]].folgar[agenda[i]] > 0) {
+                escalas[elegiveis[i]].folgar[agenda[i]]--;
+                continue;
+            }
+            
+            if (eleita == -1 || escalas[elegiveis[i]].prioridade < escalas[eleita].prioridade) eleita = elegiveis[i];
+
+            if (escalas[eleita].folgas > 0) {
+                escalas[eleita].folgar[agenda[i]] = escalas[eleita].folgas;
+            }
+        }
+        
+        return eleita;
+    };
+
+    var proximoAcompanhante = function(escala) {
+        escala.acompanhante++;
+        if (escala.acompanhante == escala.acompanhantes.length) escala.acompanhante = 0;
+    };
+
+    var proximoDia = function(dia) {
+        var confere = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate());
+        dia.setDate(dia.getDate() + 1);
+        if (confere.getDate() === dia.getDate()) {
+            dia.setHours(dia.getHours() + 2);
+        }
+    };
+
+    var incluirAgenda = function(escala, dia, turno) {
+        agendas.push({
+            acompanhante: apresentarAcompanhante(escala),
+            diaDaSemana: apresentarDiaDaSemana(dia),
+            turno: apresentarTurno(turno),
+            data: apresentarData(dia),
+            dia: dia.getDay(),
+            escala: escala
+        });
+    };
+
+    var processar = function(escalas) {
+        var metadata = inicializarEscalas(escalas);
+        var dia = metadata.menorData;
+        var fim = hoje().setMonth(dia.getMonth() + 7);
+        var iniciarEm = hoje();
+        while (dia < fim) {
+            var j = metadata.turnos.length;
+            while (j--) {
+                var turno = metadata.turnos[j];
+                var i = determinaEscalaDoDia(escalas, dia, turno);
+                if (i > -1) {
+                    if (dia >= iniciarEm) incluirAgenda(escalas[i], dia, turno);
+                    proximoAcompanhante(escalas[i]);
+                }
+            }
+            proximoDia(dia);
+        };
+    };
+
+    return {
+
+        processar: processar,
+
+        agendas: function() {
+            return agendas;
+        }
+
+    };
+};
+
+AbstractView = function() {
+
+    var that = {};
+    
+    that.apresentar = function(model) {
+        var agendas = model.agendas();
+        var res = that.gerarHtml(agendas);
+        document.write(res);
+    };
+
+    return that;
+};
+
+SplitView = function() {
+
+    var that = AbstractView();
+    
+    that.gerarHtml = function(agendas) {
+        var res = '';
+        res += '<table style="font-family:helvetica;font-size:30pt" cellspacing="0" cellpadding="5">';
+        for (var i=0; i<agendas.length; i++) {
+            res += '<tr style="background:'+agendas[i].escala.cor+';"><td>' 
+            + agendas[i].acompanhante + '</td><td>' 
+            + agendas[i].diaDaSemana + '</td><td>' 
+            + agendas[i].turno + '</td><td>' 
+            + agendas[i].data 
+            + '</td></tr>';
+        }
+        res += '</table>';
+        return res;
+    };
+    
+    return {
+
+        apresentar: that.apresentar
+
+    };
+};
+
+Controller = function(escalas) {
+    var model = new Model();
+    model.processar(escalas);
+    var view = new SplitView();
+    view.apresentar(model);
+};
+
+AjustesParaNavegadorAntigo = function() {
+    if (!Array.prototype.indexOf) {
+        Array.prototype.indexOf = function(obj, start) {
+             for (var i = (start || 0), j = this.length; i < j; i++) {
+                 if (this[i] === obj) { return i; }
+             }
+             return -1;
+        };
+    }
+
+    if (!Array.prototype.push) {
+        Array.prototype.push = function(arg) {
+             this[this.length] = arg;
+             return this.length;
+        };
+    }
+};
+
+/*
+CENARIO DE ACOMPANHANTES
+-------------------------
+A ordem dos acompanhantes define a sequencia da escala partindo do inicio
+*/
+
+AjustesParaNavegadorAntigo();
+
+new Controller([{
+        diasDaSemana: [2,3,4,5], // segunda a quinta
+        turnos: ['N','N','N','N'], // sequencia de turnos para cada dia
+        folgas: 0, // não tem folgas
+        prioridade: 10, // prioridade relativa p/ solucionar coincidencia de 2+ escalas, menor valor é prioritario
+        acompanhantes: ['Ricardo','Nilza','Mariana','Márcio'],
+        inicio: '2016/09/05',
+        cor: '#FF9FFF'
+    },{
+        diasDaSemana: [6,7,1], // Sexta, Sábado e Domingo
+        turnos: ['N','N','N'],
+        folgas: 0,
+        prioridade: 20, 
+        acompanhantes: ['Roberta', 'Marcella', 'Diogo', 'Cairo'],
+        inicio: '2016/09/11',
+        cor: '#FF3F3F'
+    },{
+        diasDaSemana: [6,7,1], // Sexta, Sábado e Domingo
+        turnos: ['N','N','N'],
+        folgas: 0,
+        prioridade: 15, 
+        acompanhantes: ['Roberta', 'Diogo', 'Marcella', 'Alexandre', 'Cairo'],
+        inicio: '2016/09/25',
+        cor: '#FF3F3F'
+    },{
+        diasDaSemana: [7],
+        turnos: ['D'],
+        folgas: 0,
+        prioridade: 20,
+        acompanhantes: ['Ricardo', 'Nilza', 'Mariana', 'Márcio', 'Angela', 'Alexandre', 'Cairo', 'Marcella', 'Diogo', 'Roberta'],
+        inicio: '2016/09/03',
+        cor: '#FFFF3F'
+    },{
+        diasDaSemana: [6,7,7],
+        turnos: ['N','D','N'],
+        folgas: 1,
+        prioridade: 10,
+        acompanhantes: ['Ricardo', 'Nilza', 'Angela', 'Márcio', 'Cairo', 'Marcella', 'Diogo', 'Roberta', 'Mariana', 'Alexandre'],
+        inicio: '2016/09/09',
+        cor: '#3FFF3F'
+    }]);
+
+</script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-2463584-5', 'auto');
+  ga('send', 'pageview');
+</script>
+<title>Escala Da Vovó</title>
+</head>
+<body>
+</body>
+</html>
