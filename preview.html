@@ -53,7 +53,7 @@ Model = function() {
                 if (turnos.indexOf(escalas[i].turnos[j]) < 0) turnos.push(escalas[i].turnos[j]);
             }
             escalas[i].folgar = [];
-            j = escalas[i].diasDaSemana.length;
+            j = escalas[i].folgas.length;
             while (j--) {
                 escalas[i].folgar[j] = 0;
             }
@@ -94,8 +94,8 @@ Model = function() {
             
             if (eleita == -1 || escalas[elegiveis[i]].prioridade < escalas[eleita].prioridade) eleita = elegiveis[i];
 
-            if (escalas[eleita].folgas > 0) {
-                escalas[eleita].folgar[agenda[i]] = escalas[eleita].folgas;
+            if (escalas[eleita].folgas[agenda[i]] > 0) {
+                escalas[eleita].folgar[agenda[i]] = escalas[eleita].folgas[agenda[i]];
             }
         }
         
@@ -231,23 +231,15 @@ AjustesParaNavegadorAntigo();
 new Controller([{
         diasDaSemana: [2,3,4,5], // segunda a quinta
         turnos: ['N','N','N','N'], // sequencia de turnos para cada dia
+        folgas: [0,0,0,0], // não tem folgas
         prioridade: 10, // prioridade relativa p/ solucionar coincidencia de 2+ escalas, menor valor é prioritario
-        folgas: 0, // não tem folgas
         acompanhantes: ['Ricardo','Nilza','Mariana','Márcio'],
         inicio: '2016/09/05',
         cor: '#FF9FFF'
     },{
-        diasDaSemana: [6,7,1], // Sexta, Sábado e Domingo
-        turnos: ['N','N','N'],
-        folgas: 0,
-        prioridade: 20, 
-        acompanhantes: ['Roberta', 'Marcella', 'Diogo', 'Cairo'],
-        inicio: '2016/09/11',
-        cor: '#FF3F3F'
-    },{
         diasDaSemana: [1],
         turnos: ['D'],
-        folgas: 0,
+        folgas: [0],
         prioridade: 10,
         acompanhantes: ['Angela'],
         inicio: '2016/09/09',
@@ -255,15 +247,23 @@ new Controller([{
     },{
         diasDaSemana: [6,7,1], // Sexta, Sábado e Domingo
         turnos: ['N','N','N'],
-        folgas: 0,
+        folgas: [0,0,0],
+        prioridade: 20, 
+        acompanhantes: ['Roberta', 'Marcella', 'Diogo', 'Cairo'],
+        inicio: '2016/09/11',
+        cor: '#FF3F3F'
+    },{
+        diasDaSemana: [6,7,1], // Sexta, Sábado e Domingo
+        turnos: ['N','N','N'],
+        folgas: [0,0,0],
         prioridade: 15, 
         acompanhantes: ['Roberta', 'Diogo', 'Marcella', 'Alexandre', 'Cairo'],
-        inicio: '2016/09/25',
+        inicio: '2016/10/09',
         cor: '#FF3F3F'
     },{
         diasDaSemana: [7],
         turnos: ['D'],
-        folgas: 0,
+        folgas: [0],
         prioridade: 20,
         acompanhantes: ['Ricardo', 'Nilza', 'Mariana', 'Márcio', 'Angela', 'Alexandre', 'Cairo', 'Marcella', 'Diogo', 'Roberta'],
         inicio: '2016/09/03',
@@ -271,10 +271,18 @@ new Controller([{
     },{
         diasDaSemana: [6,7,7],
         turnos: ['N','D','N'],
-        folgas: 1,
-        prioridade: 10,
-        acompanhantes: ['Ricardo', 'Nilza', 'Angela', 'Márcio', 'Cairo', 'Marcella', 'Diogo', 'Roberta', 'Mariana', 'Alexandre'],
+        folgas: [1,1,1],
+        prioridade: 13,
+        acompanhantes: ['Angela', 'Márcio', 'Nilza', 'Ricardo'],
         inicio: '2016/09/09',
+        cor: '#3FFF3F'
+    },{
+        diasDaSemana: [6,7,7],
+        turnos: ['N','D','N'],
+        folgas: [3,3,3],
+        prioridade: 12,
+        acompanhantes: ['Mariana', 'Cairo', 'Marcella', 'Diogo', 'Roberta', 'Alexandre'],
+        inicio: '2016/09/23',
         cor: '#3FFF3F'
     }]);
 
