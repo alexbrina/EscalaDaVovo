@@ -20,6 +20,13 @@ Model = function() {
         return res;
     };
 
+    var apresentarTurno = function(turno) {
+        var res = '';
+        var turnos = {N:'Noite', T:'Tarde', M:'Manhã', D:'Dia'};
+        res += turnos[turno];
+        return res;
+    };
+
     var apresentarData = function(dia) {
         var res = '';
         res += " " + ("0" + dia.getDate()).slice(-2);
@@ -40,10 +47,13 @@ Model = function() {
         while (i--) {
             escalas[i].acompanhante = 0;
             escalas[i].inicio = new Date(escalas[i].inicio);
-            if (turnos.indexOf(escalas[i].turno) < 0) turnos.push(escalas[i].turno);
             if (menorData == -1 || escalas[i].inicio < menorData) menorData = escalas[i].inicio;
-            var j = escalas[i].diasDaSemana.length;
+            var j = escalas[i].turnos.length;
+            while (j--) {
+                if (turnos.indexOf(escalas[i].turnos[j]) < 0) turnos.push(escalas[i].turnos[j]);
+            }
             escalas[i].folgar = [];
+            j = escalas[i].folgas.length;
             while (j--) {
                 escalas[i].folgar[j] = 0;
             }
@@ -52,31 +62,40 @@ Model = function() {
         return {turnos:turnos, menorData:menorData};
     };
 
-    var eDiaDeAcompanhar = function(escala, dia) {
-        return escala.diasDaSemana.indexOf(dia.getDay() + 1) > -1;
+    var procuraDiaDeAcompanhar = function(escala, dia, turno) {
+        var i = 0;
+        while ((i = escala.diasDaSemana.indexOf(dia.getDay() + 1, i)) > -1) {
+            if (escala.turnos[i] == turno) return i;
+            i++;
+        }
+        return -1;
     };
 
     var determinaEscalaDoDia = function(escalas, dia, turno) {
-        var i = 0, elegiveis = [], eleita = -1;
+        var i = 0, d = 0, agenda = [], elegiveis = [], eleita = -1;
         
         i = escalas.length;
         while (i--) {
-            if (escalas[i].turno == turno 
-            && escalas[i].inicio <= dia
-            && eDiaDeAcompanhar(escalas[i], dia)) elegiveis.push(i);
+            if (escalas[i].inicio <= dia) {
+                d = procuraDiaDeAcompanhar(escalas[i], dia, turno);
+                if (d >= 0) {
+                    elegiveis.push(i);
+                    agenda.push(d);
+                }
+            }
         }
 
         i = elegiveis.length;
         while (i--) {
-            if (escalas[elegiveis[i]].folgar[dia.getDay()] > 0) {
-                escalas[elegiveis[i]].folgar[dia.getDay()]--;
+            if (escalas[elegiveis[i]].folgar[agenda[i]] > 0) {
+                escalas[elegiveis[i]].folgar[agenda[i]]--;
                 continue;
             }
             
             if (eleita == -1 || escalas[elegiveis[i]].prioridade < escalas[eleita].prioridade) eleita = elegiveis[i];
 
-            if (escalas[eleita].folgas > 0) {
-                escalas[eleita].folgar[dia.getDay()] = escalas[eleita].folgas;
+            if (escalas[eleita].folgas[agenda[i]] > 0) {
+                escalas[eleita].folgar[agenda[i]] = escalas[eleita].folgas[agenda[i]];
             }
         }
         
@@ -96,10 +115,11 @@ Model = function() {
         }
     };
 
-    var incluirAgenda = function(escala, dia) {
+    var incluirAgenda = function(escala, dia, turno) {
         agendas.push({
             acompanhante: apresentarAcompanhante(escala),
             diaDaSemana: apresentarDiaDaSemana(dia),
+            turno: apresentarTurno(turno),
             data: apresentarData(dia),
             dia: dia.getDay(),
             escala: escala
@@ -117,7 +137,7 @@ Model = function() {
                 var turno = metadata.turnos[j];
                 var i = determinaEscalaDoDia(escalas, dia, turno);
                 if (i > -1) {
-                    if (dia >= iniciarEm) incluirAgenda(escalas[i], dia);
+                    if (dia >= iniciarEm) incluirAgenda(escalas[i], dia, turno);
                     proximoAcompanhante(escalas[i]);
                 }
             }
@@ -160,7 +180,7 @@ SplitView = function() {
             res += '<tr style="background:'+agendas[i].escala.cor+';"><td>' 
             + agendas[i].acompanhante + '</td><td>' 
             + agendas[i].diaDaSemana + '</td><td>' 
-            + agendas[i].escala.turno + '</td><td>' 
+            + agendas[i].turno + '</td><td>' 
             + agendas[i].data 
             + '</td></tr>';
         }
@@ -210,43 +230,67 @@ AjustesParaNavegadorAntigo();
 
 new Controller([{
         diasDaSemana: [2,3,4,5], // segunda a quinta
-        turno: 'Noite',
-        folgas: 0, // não tem folgas
-        prioridade: 0, // prioridade relativa p/ solucionar coincidencia de 2+ escalas, menor valor é prioritario
-        acompanhantes: ['Ricardo', 'Nilza', 'Mariana', 'Márcio'],
-        inicio: '2015/12/07',
+        turnos: ['N','N','N','N'], // sequencia de turnos para cada dia
+        folgas: [0,0,0,0], // não tem folgas
+        prioridade: 10, // prioridade relativa p/ solucionar coincidencia de 2+ escalas, menor valor é prioritario
+        acompanhantes: ['Ricardo','Nilza','Mariana','Márcio'],
+        inicio: '2016/09/05',
         cor: '#FF9FFF'
     },{
-        diasDaSemana: [6,7,1], // Sexta, Sábado e Domingo
-        turno: 'Noite',
-        folgas: 0,
-        prioridade: 1, 
-        acompanhantes: ['Cairo', 'Marcella', 'Diogo', 'Roberta',             'Marcella', 'Diogo', 'Cairo', 'Roberta',             'Diogo', 'Roberta', 'Cairo', 'Marcella',             'Roberta', 'Cairo', 'Diogo', 'Marcella'],
-        inicio: '2016/07/08',
-        cor: '#FF3F3F'
-    },{
         diasDaSemana: [7],
-        turno: 'Dia',
-        folgas: 0,
-        prioridade: 1,
-        acompanhantes: ['Cairo', 'Marcella', 'Diogo', 'Roberta', 'Ricardo', 'Nilza', 'Mariana', 'Márcio', 'Angela'],
-        inicio: '2016/07/09',
+        turnos: ['D'],
+        folgas: [0],
+        prioridade: 20,
+        acompanhantes: ['Ricardo', 'Nilza', 'Mariana', 'Márcio', 'Angela', 'Alexandre', 'Cairo', 'Marcella', 'Diogo', 'Roberta'],
+        inicio: '2016/09/03',
         cor: '#FFFF3F'
     },{
-        diasDaSemana: [7],
-        turno: 'Dia',
-        folgas: 1,
-        prioridade: 0,
-        acompanhantes: ['Marcelo'],
-        inicio: '2015/12/19',
+        diasDaSemana: [1],
+        turnos: ['D'],
+        folgas: [0],
+        prioridade: 10,
+        acompanhantes: ['Angela'],
+        inicio: '2016/09/09',
+        cor: '#9FCFFF'
+    },{
+        diasDaSemana: [6,7,1],
+        turnos: ['N','N','N'],
+        folgas: [0,0,0],
+        prioridade: 20, 
+        acompanhantes: ['Roberta', 'Marcella', 'Diogo', 'Cairo',        'Roberta', 'Diogo', 'Marcella', 'Cairo'],
+        inicio: '2016/09/11',
+        cor: '#FF3F3F'
+    },{
+        diasDaSemana: [6,7,1],
+        turnos: ['N','N','N'],
+        folgas: [0,0,0],
+        prioridade: 15, 
+        acompanhantes: ['Marcella', 'Diogo', 'Roberta', 'Alexandre', 'Cairo'],
+        inicio: '2016/10/09',
+        cor: '#FF3F3F'
+    },{
+        diasDaSemana: [6],
+        turnos: ['N'],
+        folgas: [1],
+        prioridade: 13,
+        acompanhantes: ['Márcio'],
+        inicio: '2016/09/09',
         cor: '#3FFF3F'
     },{
-        diasDaSemana: [6,7],
-        turno: 'Noite',
-        folgas: 1,
-        prioridade: 0,
-        acompanhantes: ['Marcelo'],
-        inicio: '2015/12/18',
+        diasDaSemana: [7],
+        turnos: ['D'],
+        folgas: [1],
+        prioridade: 13,
+        acompanhantes: ['Nilza', 'Angela'],
+        inicio: '2016/09/09',
+        cor: '#3FFF3F'
+    },{
+        diasDaSemana: [7],
+        turnos: ['N'],
+        folgas: [1],
+        prioridade: 13,
+        acompanhantes: ['Ricardo'],
+        inicio: '2016/09/09',
         cor: '#3FFF3F'
     }]);
 
