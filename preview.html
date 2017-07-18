@@ -116,15 +116,18 @@ Model = function() {
     };
 
     var incluirAgenda = function(escala, dia, turno, filter) {
+        
         var acompanhante = apresentarAcompanhante(escala);
         if (filter && filter.toLowerCase() != acompanhante.toLowerCase()) return;
+        
         agendas.push({
             acompanhante: acompanhante,
             diaDaSemana: apresentarDiaDaSemana(dia),
             turno: apresentarTurno(turno),
             data: apresentarData(dia),
             dia: dia.getDay(),
-            escala: escala
+            corFundo: dia < hoje() ? '#DDD' : escala.cor,
+            corTexto: dia < hoje() ? '#AAA' : '#000'
         });
     };
 
@@ -133,6 +136,7 @@ Model = function() {
         var dia = metadata.menorData;
         var fim = hoje().setMonth(dia.getMonth() + 7);
         var iniciarEm = hoje();
+        iniciarEm.setDate(iniciarEm.getDate() - 3);
         while (dia < fim) {
             var j = metadata.turnos.length;
             while (j--) {
@@ -179,7 +183,7 @@ SplitView = function() {
         var res = '';
         res += '<table style="font-family:helvetica;font-size:30pt" cellspacing="0" cellpadding="5">';
         for (var i=0; i<agendas.length; i++) {
-            res += '<tr style="background:'+agendas[i].escala.cor+';"><td>' 
+            res += '<tr style="color:'+agendas[i].corTexto+';background:'+agendas[i].corFundo+';"><td>' 
             + agendas[i].acompanhante + '</td><td>' 
             + agendas[i].diaDaSemana + '</td><td>' 
             + agendas[i].turno + '</td><td>' 
@@ -202,7 +206,7 @@ FilterView = function() {
     var that = SplitView();
     
     that.getFilter = function() {
-        return window.location.search.replace("?", "").split("&")[0];
+        return decodeURI(window.location.search.replace("?", "").split("&")[0]);
     };
     
     return that;
@@ -212,9 +216,7 @@ Controller = function(escalas) {
     var model = new Model();
     var view = new FilterView();
 
-    var filter = view.getFilter();
-    alert(filter);
-    model.processar(escalas, filter);
+    model.processar(escalas, view.getFilter());
     view.apresentar(model);
 };
 
@@ -266,14 +268,22 @@ new Controller([{
         folgas: [0],
         prioridade: 10,
         acompanhantes: ['Angela'],
-        inicio: '2017/07/23',
+        inicio: '2017/07/16',
         cor: '#9FCFFF'
     },{
         diasDaSemana: [6,7,1],
         turnos: ['N','N','N'],
         folgas: [0,0,0],
+        prioridade: 20, 
+        acompanhantes: ['Marcella', 'Diogo', 'Roberta', 'Alexandre', 'Cairo'],
+        inicio: '2016/10/09',
+        cor: '#FF3F3F'
+    },{
+        diasDaSemana: [6,7,1],
+        turnos: ['N','N','N'],
+        folgas: [0,0,0],
         prioridade: 15, 
-        acompanhantes: ['Diogo', 'Alexandre', 'Cairo', 'Marcella',      'Cairo', 'Marcella', 'Diogo', 'Alexandre',      'Marcella', 'Cairo', 'Diogo', 'Alexandre',      'Diogo', 'Alexandre', 'Marcella', 'Cairo'],
+        acompanhantes: ['Diogo', 'Alexandre', 'Cairo', 'Marcella',      'Alexandre', 'Diogo', 'Marcella', 'Cairo',      'Marcella', 'Cairo', 'Diogo', 'Alexandre',      'Cairo', 'Marcella', 'Diogo', 'Alexandre'],
         inicio: '2017/07/21',
         cor: '#FF3F3F'
     },{
