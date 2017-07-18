@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -116,29 +115,35 @@ Model = function() {
         }
     };
 
-    var incluirAgenda = function(escala, dia, turno) {
+    var incluirAgenda = function(escala, dia, turno, filter) {
+        
+        var acompanhante = apresentarAcompanhante(escala);
+        if (filter && filter.toLowerCase() != acompanhante.toLowerCase()) return;
+        
         agendas.push({
-            acompanhante: apresentarAcompanhante(escala),
+            acompanhante: acompanhante,
             diaDaSemana: apresentarDiaDaSemana(dia),
             turno: apresentarTurno(turno),
             data: apresentarData(dia),
             dia: dia.getDay(),
-            escala: escala
+            corFundo: dia < hoje() ? '#DDD' : escala.cor,
+            corTexto: dia < hoje() ? '#AAA' : '#000'
         });
     };
 
-    var processar = function(escalas) {
+    var processar = function(escalas, filter) {
         var metadata = inicializarEscalas(escalas);
         var dia = metadata.menorData;
         var fim = hoje().setMonth(dia.getMonth() + 7);
         var iniciarEm = hoje();
+        iniciarEm.setDate(iniciarEm.getDate() - 3);
         while (dia < fim) {
             var j = metadata.turnos.length;
             while (j--) {
                 var turno = metadata.turnos[j];
                 var i = determinaEscalaDoDia(escalas, dia, turno);
                 if (i > -1) {
-                    if (dia >= iniciarEm) incluirAgenda(escalas[i], dia, turno);
+                    if (dia >= iniciarEm) incluirAgenda(escalas[i], dia, turno, filter);
                     proximoAcompanhante(escalas[i]);
                 }
             }
@@ -178,7 +183,7 @@ SplitView = function() {
         var res = '';
         res += '<table style="font-family:helvetica;font-size:30pt" cellspacing="0" cellpadding="5">';
         for (var i=0; i<agendas.length; i++) {
-            res += '<tr style="background:'+agendas[i].escala.cor+';"><td>' 
+            res += '<tr style="color:'+agendas[i].corTexto+';background:'+agendas[i].corFundo+';"><td>' 
             + agendas[i].acompanhante + '</td><td>' 
             + agendas[i].diaDaSemana + '</td><td>' 
             + agendas[i].turno + '</td><td>' 
@@ -196,10 +201,22 @@ SplitView = function() {
     };
 };
 
+FilterView = function() {
+    
+    var that = SplitView();
+    
+    that.getFilter = function() {
+        return decodeURI(window.location.search.replace("?", "").split("&")[0]);
+    };
+    
+    return that;
+}
+
 Controller = function(escalas) {
     var model = new Model();
-    model.processar(escalas);
-    var view = new SplitView();
+    var view = new FilterView();
+
+    model.processar(escalas, view.getFilter());
     view.apresentar(model);
 };
 
@@ -235,15 +252,15 @@ new Controller([{
         folgas: [0,0,0,0], // não tem folgas
         prioridade: 10, // prioridade relativa p/ solucionar coincidencia de 2+ escalas, menor valor é prioritario
         acompanhantes: ['Ricardo','Nilza','Mariana','Márcio'],
-        inicio: '2016/09/05',
+        inicio: '2017/07/17',
         cor: '#FF9FFF'
     },{
         diasDaSemana: [7],
         turnos: ['D'],
         folgas: [0],
         prioridade: 20,
-        acompanhantes: ['Ricardo', 'Nilza', 'Mariana', 'Márcio', 'Angela', 'Alexandre', 'Cairo', 'Marcella', 'Diogo', 'Roberta'],
-        inicio: '2016/09/03',
+        acompanhantes: ['Márcio', 'Angela', 'Alexandre', 'Cairo', 'Marcella', 'Diogo', 'Ricardo', 'Nilza', 'Mariana'],
+        inicio: '2017/07/22',
         cor: '#FFFF3F'
     },{
         diasDaSemana: [1],
@@ -251,23 +268,23 @@ new Controller([{
         folgas: [0],
         prioridade: 10,
         acompanhantes: ['Angela'],
-        inicio: '2016/09/09',
+        inicio: '2017/07/16',
         cor: '#9FCFFF'
     },{
         diasDaSemana: [6,7,1],
         turnos: ['N','N','N'],
         folgas: [0,0,0],
         prioridade: 20, 
-        acompanhantes: ['Roberta', 'Marcella', 'Diogo', 'Cairo',        'Roberta', 'Diogo', 'Marcella', 'Cairo'],
-        inicio: '2016/09/11',
+        acompanhantes: ['Marcella', 'Diogo', 'Roberta', 'Alexandre', 'Cairo'],
+        inicio: '2016/10/09',
         cor: '#FF3F3F'
     },{
         diasDaSemana: [6,7,1],
         turnos: ['N','N','N'],
         folgas: [0,0,0],
         prioridade: 15, 
-        acompanhantes: ['Marcella', 'Diogo', 'Roberta', 'Alexandre', 'Cairo'],
-        inicio: '2016/10/09',
+        acompanhantes: ['Diogo', 'Alexandre', 'Cairo', 'Marcella',      'Alexandre', 'Diogo', 'Marcella', 'Cairo',      'Marcella', 'Cairo', 'Diogo', 'Alexandre',      'Cairo', 'Marcella', 'Diogo', 'Alexandre'],
+        inicio: '2017/07/21',
         cor: '#FF3F3F'
     },{
         diasDaSemana: [6],
