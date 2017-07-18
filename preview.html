@@ -115,9 +115,11 @@ Model = function() {
         }
     };
 
-    var incluirAgenda = function(escala, dia, turno) {
+    var incluirAgenda = function(escala, dia, turno, filter) {
+        var acompanhante = apresentarAcompanhante(escala);
+        if (filter && filter.toLowerCase() != acompanhante.toLowerCase()) return;
         agendas.push({
-            acompanhante: apresentarAcompanhante(escala),
+            acompanhante: acompanhante,
             diaDaSemana: apresentarDiaDaSemana(dia),
             turno: apresentarTurno(turno),
             data: apresentarData(dia),
@@ -126,7 +128,7 @@ Model = function() {
         });
     };
 
-    var processar = function(escalas) {
+    var processar = function(escalas, filter) {
         var metadata = inicializarEscalas(escalas);
         var dia = metadata.menorData;
         var fim = hoje().setMonth(dia.getMonth() + 7);
@@ -137,7 +139,7 @@ Model = function() {
                 var turno = metadata.turnos[j];
                 var i = determinaEscalaDoDia(escalas, dia, turno);
                 if (i > -1) {
-                    if (dia >= iniciarEm) incluirAgenda(escalas[i], dia, turno);
+                    if (dia >= iniciarEm) incluirAgenda(escalas[i], dia, turno, filter);
                     proximoAcompanhante(escalas[i]);
                 }
             }
@@ -195,10 +197,24 @@ SplitView = function() {
     };
 };
 
+FilterView = function() {
+    
+    var that = SplitView();
+    
+    that.getFilter = function() {
+        return window.location.search.replace("?", "").split("&")[0];
+    };
+    
+    return that;
+}
+
 Controller = function(escalas) {
     var model = new Model();
-    model.processar(escalas);
-    var view = new SplitView();
+    var view = new FilterView();
+
+    var filter = view.getFilter();
+    alert(filter);
+    model.processar(escalas, filter);
     view.apresentar(model);
 };
 
@@ -257,7 +273,7 @@ new Controller([{
         turnos: ['N','N','N'],
         folgas: [0,0,0],
         prioridade: 15, 
-        acompanhantes: ['Diogo', 'Alexandre', 'Cairo', 'Marcella'],
+        acompanhantes: ['Diogo', 'Alexandre', 'Cairo', 'Marcella',      'Cairo', 'Marcella', 'Diogo', 'Alexandre',      'Marcella', 'Cairo', 'Diogo', 'Alexandre',      'Diogo', 'Alexandre', 'Marcella', 'Cairo'],
         inicio: '2017/07/21',
         cor: '#FF3F3F'
     },{
