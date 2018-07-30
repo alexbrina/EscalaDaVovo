@@ -6,7 +6,7 @@
 <meta http-equiv="Expires" content="0" />
 <meta charset=utf-8 />
 <script>
-Model = function() {
+var Model = function() {
 
     var agendas = [];
 
@@ -163,7 +163,7 @@ Model = function() {
     };
 };
 
-AbstractView = function() {
+var AbstractView = function() {
 
     var that = {};
     
@@ -176,7 +176,7 @@ AbstractView = function() {
     return that;
 };
 
-SplitView = function() {
+var SplitView = function() {
 
     var that = AbstractView();
     
@@ -202,7 +202,7 @@ SplitView = function() {
     };
 };
 
-FilterView = function() {
+var FilterView = function() {
     
     var that = SplitView();
     
@@ -213,7 +213,7 @@ FilterView = function() {
     return that;
 }
 
-Controller = function(escalas) {
+var Controller = function(escalas) {
     var model = new Model();
     var view = new FilterView();
 
@@ -221,7 +221,7 @@ Controller = function(escalas) {
     view.apresentar(model);
 };
 
-AjustesParaNavegadorAntigo = function() {
+var AjustesParaNavegadorAntigo = function() {
     if (!Array.prototype.indexOf) {
         Array.prototype.indexOf = function(obj, start) {
              for (var i = (start || 0), j = this.length; i < j; i++) {
@@ -260,8 +260,8 @@ new Controller([{
         turnos: ['D'],
         folgas: [0],
         prioridade: 20,
-        acompanhantes: ['Márcio', 'Angela', 'Alexandre', 'Cairo', 'Marcella', 'Diogo', 'Ricardo', 'Nilza', 'Mariana'],
-        inicio: '2017/07/22',
+        acompanhantes: ['Ricardo', 'Nilza', 'Márcio', 'Angela', 'Alexandre', 'Cairo', 'Marcella', 'Diogo'],
+        inicio: '2018/06/23',
         cor: '#FFFF3F'
     },{
         diasDaSemana: [1],
@@ -284,8 +284,8 @@ new Controller([{
         turnos: ['N','N','N'],
         folgas: [0,0,0],
         prioridade: 15, 
-        acompanhantes: ['Diogo', 'Alexandre', 'Cairo', 'Marcella',      'Alexandre', 'Diogo', 'Marcella', 'Cairo',      'Marcella', 'Cairo', 'Diogo', 'Alexandre',      'Cairo', 'Marcella', 'Diogo', 'Alexandre'],
-        inicio: '2017/07/21',
+        acompanhantes: ['Alexandre', 'Cairo', 'Mariana', 'Diogo', 'Rodolpho', 'Marcella', 'Roberta', 'Raissa', 'Camilla', 'Bárbara', 'Kakis'],
+        inicio: '2018/08/03',
         cor: '#FF3F3F'
     },{
         diasDaSemana: [6],
