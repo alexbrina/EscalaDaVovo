@@ -195,7 +195,7 @@
                 }
                 var j = agendas.length;
                 while (j--) {
-                    if (filter && filter.toLowerCase() != agendas[j].acompanhante.toLowerCase()) agendas.splice(j, 1);
+                    if (filter && filter.charAt(0) != '_' && filter.toLowerCase() != agendas[j].acompanhante.toLowerCase()) agendas.splice(j, 1);
                 }
             };
 
@@ -246,7 +246,8 @@
 
             return {
 
-                apresentar: that.apresentar
+                apresentar: that.apresentar,
+                gerarHtml: that.gerarHtml
 
             };
         };
