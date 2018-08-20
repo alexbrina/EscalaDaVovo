@@ -116,10 +116,35 @@
                 }
             };
 
-            var incluirAgenda = function (escala, dia, turno, filter) {
+            var proximaAgenda = function (partida, dia, direcao) {
+                var i, r, t = agendas.length - 1, distancia = 0;
+                var grupo = agendas[partida].grupo;
+                var ascende = function () {
+                    i = partida;
+                    while (i++ < t) {
+                        distancia++;
+                        if (agendas[i].grupo == grupo && agendas[i].dia == dia) return i;
+                    }
+                };
+                var descende = function () {
+                    i = partida;
+                    while (i--) {
+                        distancia++;
+                        if (agendas[i].grupo == grupo && agendas[i].dia == dia) return i;
+                    }
+                };
+                direcao = direcao || 1;
+                if (direcao < 0 && partida == 0) direcao = 1;
+                if (direcao > 0 && partida >= t) direcao = -1;
+                adenda = (direcao > 0) ? ascende() : descende();
+                if (direcao < 0 && adenda == 0) return ascende();
+                if (direcao > 0 && adenda >= t) return descende();
+                return { adenda: adenda, distancia: distancia };
+            };
+
+            var incluirAgenda = function (escala, dia, turno) {
 
                 var acompanhante = apresentarAcompanhante(escala);
-                if (filter && filter.toLowerCase() != acompanhante.toLowerCase()) return;
 
                 agendas.push({
                     acompanhante: acompanhante,
@@ -127,12 +152,13 @@
                     turno: apresentarTurno(turno),
                     data: apresentarData(dia),
                     dia: dia.getDay(),
+                    grupo: escala.grupo,
                     corFundo: dia < hoje() ? '#DDD' : escala.cor,
                     corTexto: dia < hoje() ? '#AAA' : '#000'
                 });
             };
 
-            var processar = function (escalas, filter) {
+            var processar = function (escalas) {
                 var metadata = inicializarEscalas(escalas);
                 var dia = metadata.menorData;
                 var fim = hoje().setMonth(dia.getMonth() + 7);
@@ -144,7 +170,7 @@
                         var turno = metadata.turnos[j];
                         var i = determinaEscalaDoDia(escalas, dia, turno);
                         if (i > -1) {
-                            if (dia >= iniciarEm) incluirAgenda(escalas[i], dia, turno, filter);
+                            if (dia >= iniciarEm) incluirAgenda(escalas[i], dia, turno);
                             proximoAcompanhante(escalas[i]);
                         }
                     }
@@ -152,9 +178,32 @@
                 };
             };
 
+            var revisar = function (filter) {
+                var j = agendas.length, anterior = 0, troca = 0, aux = '';
+                while (j--) {
+                    if ('camilla' == agendas[j].acompanhante.toLowerCase()) {
+                        if (agendas[j].dia != 6) {
+                            anterior = proximaAgenda(j, 6, -1);
+                            troca = proximaAgenda(j, 6, 1);
+                            if (anterior.distancia < troca.distancia) troca = anterior;
+                            troca = troca.adenda;
+                            aux = agendas[troca].acompanhante;
+                            agendas[troca].acompanhante = agendas[j].acompanhante;
+                            agendas[j].acompanhante = aux;
+                        }
+                    };
+                }
+                var j = agendas.length;
+                while (j--) {
+                    if (filter && filter.charAt(0) != '_' && filter.toLowerCase() != agendas[j].acompanhante.toLowerCase()) agendas.splice(j, 1);
+                }
+            };
+
             return {
 
                 processar: processar,
+
+                revisar: revisar,
 
                 agendas: function () {
                     return agendas;
@@ -197,7 +246,8 @@
 
             return {
 
-                apresentar: that.apresentar
+                apresentar: that.apresentar,
+                gerarHtml: that.gerarHtml
 
             };
         };
@@ -217,7 +267,9 @@
             var model = new Model();
             var view = new FilterView();
 
-            model.processar(escalas, view.getFilter());
+            model.processar(escalas);
+            model.revisar(view.getFilter());
+
             view.apresentar(model);
         };
 
@@ -252,9 +304,10 @@
             turnos: ['N', 'N', 'N', 'N'], // sequencia de turnos para cada dia
             folgas: [0, 0, 0, 0], // não tem folgas
             prioridade: 10, // prioridade relativa p/ solucionar coincidencia de 2+ escalas, menor valor é prioritario
-            acompanhantes: ['Ricardo', 'Nilza', 'Mariana', 'Márcio'],
+            acompanhantes: ['Ricardo', 'Nilza', 'Angela', 'Márcio'],
             inicio: '2017/07/17',
-            cor: '#FF9FFF'
+            cor: '#FF9FFF',
+            grupo: 'irmaos'
         }, {
             diasDaSemana: [7],
             turnos: ['D'],
@@ -262,7 +315,8 @@
             prioridade: 20,
             acompanhantes: ['Ricardo', 'Nilza', 'Márcio', 'Angela', 'Alexandre', 'Cairo', 'Marcella', 'Diogo'],
             inicio: '2018/06/23',
-            cor: '#FFFF3F'
+            cor: '#FFFF3F',
+            grupo: 'sabado_dia'
         }, {
             diasDaSemana: [1],
             turnos: ['D'],
@@ -270,23 +324,26 @@
             prioridade: 10,
             acompanhantes: ['Angela'],
             inicio: '2017/07/16',
-            cor: '#9FCFFF'
+            cor: '#9FCFFF',
+            grupo: 'irmaos'
         }, {
             diasDaSemana: [6, 7, 1],
             turnos: ['N', 'N', 'N'],
             folgas: [0, 0, 0],
             prioridade: 20,
-            acompanhantes: ['Marcella', 'Diogo', 'Roberta', 'Alexandre', 'Cairo'],
-            inicio: '2016/10/09',
-            cor: '#FF3F3F'
+            acompanhantes: ['Diogo', 'Alexandre', 'Cairo', 'Marcella', 'Alexandre', 'Diogo', 'Marcella', 'Cairo', 'Marcella', 'Cairo', 'Diogo', 'Alexandre', 'Cairo', 'Marcella', 'Diogo', 'Alexandre'],
+            inicio: '2017/07/21',
+            cor: '#FF3F3F',
+            grupo: 'netos'
         }, {
             diasDaSemana: [6, 7, 1],
             turnos: ['N', 'N', 'N'],
             folgas: [0, 0, 0],
             prioridade: 15,
-            acompanhantes: ['Diogo', 'Alexandre', 'Cairo', 'Marcella', 'Alexandre', 'Diogo', 'Marcella', 'Cairo', 'Marcella', 'Cairo', 'Diogo', 'Alexandre', 'Cairo', 'Marcella', 'Diogo', 'Alexandre'],
-            inicio: '2017/07/21',
-            cor: '#FF3F3F'
+            acompanhantes: ['Rodolpho', 'Raissa', 'Roberta', 'Camilla', 'Bárbara', 'Kakis', 'Alexandre', 'Cairo', 'Mariana', 'Diogo', 'Marcella', 'Rodolpho', 'Raissa', 'Roberta', 'Camilla', 'Kakis', 'Alexandre', 'Cairo', 'Mariana', 'Diogo', 'Marcella'],
+            inicio: '2018/08/20',
+            cor: '#FF3F3F',
+            grupo: 'netos'
         }, {
             diasDaSemana: [6],
             turnos: ['N'],
@@ -294,7 +351,8 @@
             prioridade: 13,
             acompanhantes: ['Márcio'],
             inicio: '2016/09/09',
-            cor: '#3FFF3F'
+            cor: '#3FFF3F',
+            grupo: 'irmaos'
         }, {
             diasDaSemana: [7],
             turnos: ['D'],
@@ -302,7 +360,8 @@
             prioridade: 13,
             acompanhantes: ['Nilza', 'Angela'],
             inicio: '2016/09/09',
-            cor: '#3FFF3F'
+            cor: '#3FFF3F',
+            grupo: 'irmaos'
         }, {
             diasDaSemana: [7],
             turnos: ['N'],
@@ -310,7 +369,8 @@
             prioridade: 13,
             acompanhantes: ['Ricardo'],
             inicio: '2016/09/09',
-            cor: '#3FFF3F'
+            cor: '#3FFF3F',
+            grupo: 'irmaos'
         }]);
 
     </script>
