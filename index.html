@@ -116,30 +116,34 @@
                 }
             };
 
-            var proximaAgenda = function (partida, dia, direcao) {
+            var buscaAgenda = function (partida, dia, direcao) {
                 var i, r, t = agendas.length - 1, distancia = 0;
                 var grupo = agendas[partida].grupo;
                 var ascende = function () {
                     i = partida;
+                    distancia = 0;
                     while (i++ < t) {
                         distancia++;
                         if (agendas[i].grupo == grupo && agendas[i].dia == dia) return i;
                     }
+                    return i;
                 };
                 var descende = function () {
                     i = partida;
+                    distancia = 0;
                     while (i--) {
                         distancia++;
                         if (agendas[i].grupo == grupo && agendas[i].dia == dia) return i;
                     }
+                    return i;
                 };
                 direcao = direcao || 1;
                 if (direcao < 0 && partida == 0) direcao = 1;
                 if (direcao > 0 && partida >= t) direcao = -1;
-                adenda = (direcao > 0) ? ascende() : descende();
-                if (direcao < 0 && adenda == 0) return ascende();
-                if (direcao > 0 && adenda >= t) return descende();
-                return { adenda: adenda, distancia: distancia };
+                agenda = (direcao > 0) ? ascende() : descende();
+                if (direcao < 0 && agenda < 0) agenda = ascende();
+                if (direcao > 0 && agenda == t) agenda = descende();
+                return { agenda: agenda, distancia: distancia };
             };
 
             var incluirAgenda = function (escala, dia, turno) {
@@ -183,10 +187,10 @@
                 while (j--) {
                     if ('camilla' == agendas[j].acompanhante.toLowerCase()) {
                         if (agendas[j].dia != 6) {
-                            anterior = proximaAgenda(j, 6, -1);
-                            troca = proximaAgenda(j, 6, 1);
+                            troca = buscaAgenda(j, 6, 1);
+                            anterior = buscaAgenda(j, 6, -1);
                             if (anterior.distancia < troca.distancia) troca = anterior;
-                            troca = troca.adenda;
+                            troca = troca.agenda;
                             aux = agendas[troca].acompanhante;
                             agendas[troca].acompanhante = agendas[j].acompanhante;
                             agendas[j].acompanhante = aux;
