@@ -189,6 +189,7 @@
                         if (agendas[j].dia != 6) {
                             troca = buscaAgenda(j, 6, 1);
                             anterior = buscaAgenda(j, 6, -1);
+                            if (troca.agenda >= agendas.length) continue;
                             if (anterior.distancia < troca.distancia) troca = anterior;
                             troca = troca.agenda;
                             aux = agendas[troca].acompanhante;
