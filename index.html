@@ -167,7 +167,7 @@
                 var dia = metadata.menorData;
                 var fim = hoje().setMonth(dia.getMonth() + 7);
                 var iniciarEm = hoje();
-                iniciarEm.setDate(iniciarEm.getDate() - 10);
+                iniciarEm.setDate(iniciarEm.getDate() - 14);
                 while (dia < fim) {
                     var j = metadata.turnos.length;
                     while (j--) {
@@ -223,6 +223,7 @@
 
             that.apresentar = function (model) {
                 var agendas = model.agendas();
+                agendas.splice(0, 10)
                 var res = that.gerarHtml(agendas);
                 document.write(res);
             };
